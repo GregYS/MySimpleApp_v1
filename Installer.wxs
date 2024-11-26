@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  
+  <!-- Определение продукта -->
   <Product Id="*" Name="MySimpleApp_v1" Language="1033" Version="1.0.0.0" Manufacturer="MySimpleApp_test" UpgradeCode="fa62d46b-1260-4fff-9db4-bcfcbdc0195f">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
-
+    
     <MajorUpgrade DowngradeErrorMessage="A newer version of MySimpleApp_v1 is already installed." />
     <MediaTemplate />
 
+    <!-- Определение компонента продукта -->
     <Feature Id="ProductFeature" Title="MySimpleApp_v1" Level="1">
       <ComponentGroupRef Id="MyAppFiles" />
     </Feature>
   </Product>
 
+  <!-- Фрагмент, содержащий информацию о компонентах -->
   <Fragment>
-    <!-- Структура каталогов без использования StandardDirectories -->
     <Directory Id="ProgramFilesFolder" Name="ProgramFiles">
       <Directory Id="INSTALLFOLDER" Name="MySimpleApp_v1" />
     </Directory>
@@ -23,4 +26,5 @@
       </Component>
     </ComponentGroup>
   </Fragment>
+
 </Wix>
