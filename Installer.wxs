@@ -18,7 +18,7 @@
 
   <ComponentGroup Id="MyAppFiles" Directory="INSTALLFOLDER">
     <Component Id="MySimpleApp_v1.exe" Guid="fa62d46b-1260-4fff-9db4-bcfcbdc0195f">
-      <File Source="build_output/MySimpleApp_v1.exe" />
+      <File Source="../build_output/MySimpleApp_v1.exe" />
     </Component>
   </ComponentGroup>
 </Wix>
