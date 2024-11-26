@@ -12,11 +12,10 @@
   </Product>
 
   <Fragment>
-    <StandardDirectories>
-      <Directory Id="ProgramFilesFolder" Name="ProgramFiles">
-        <Directory Id="INSTALLFOLDER" Name="MySimpleApp_v1" />
-      </Directory>
-    </StandardDirectories>
+    <!-- Структура каталогов без использования StandardDirectories -->
+    <Directory Id="ProgramFilesFolder" Name="ProgramFiles">
+      <Directory Id="INSTALLFOLDER" Name="MySimpleApp_v1" />
+    </Directory>
 
     <ComponentGroup Id="MyAppFiles" Directory="INSTALLFOLDER">
       <Component Id="MySimpleApp_v1.exe" Guid="fa62d46b-1260-4fff-9db4-bcfcbdc0195f">
