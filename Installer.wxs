@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Product Id="*" Name="MySimpleApp_v1" Language="1033" Version="1.0.0.0" Manufacturer="MySimpleApp_test" UpgradeCode="fa62d46b-1260-4fff-9db4-bcfcbdc0195f">
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of MySimpleApp_v1 is already installed." />
     <MediaTemplate />
@@ -12,11 +12,11 @@
   </Product>
 
   <Fragment>
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
+    <StandardDirectories>
+      <Directory Id="ProgramFilesFolder" Name="ProgramFiles">
         <Directory Id="INSTALLFOLDER" Name="MySimpleApp_v1" />
       </Directory>
-    </Directory>
+    </StandardDirectories>
 
     <ComponentGroup Id="MyAppFiles" Directory="INSTALLFOLDER">
       <Component Id="MySimpleApp_v1.exe" Guid="fa62d46b-1260-4fff-9db4-bcfcbdc0195f">
