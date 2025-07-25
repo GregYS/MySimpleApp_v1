@@ -26,7 +26,7 @@ jobs:
       id: ec2
       run: |
         INSTANCE_ID=$(aws ec2 run-instances \
-          --image-id ami-0345f44fe05216fc4 \
+          --image-id ami-036159e290aed9f0f \
           --count 1 \
           --instance-type t2.medium \
           --key-name key-035ff5d7529cac43f \
