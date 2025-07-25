@@ -28,7 +28,7 @@ jobs:
         INSTANCE_ID=$(aws ec2 run-instances \
           --image-id ami-0c9fb5d338f1eec43 \
           --count 1 \
-          --instance-type t2.medium \
+          --instance-type t3.medium \
           --key-name key-035ff5d7529cac43f \
           --security-group-ids sg-0a8d78f4a99eeecfe \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
