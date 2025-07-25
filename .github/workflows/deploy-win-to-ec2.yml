@@ -29,7 +29,7 @@ jobs:
           --image-id ami-0c9fb5d338f1eec43 \
           --count 1 \
           --instance-type t3.medium \
-          --key-name ${{ secret.WINDOWS_EC2_KEY_NAME }} \
+          --key-name ${{ secrets.WINDOWS_EC2_KEY_NAME }} \
           --security-group-ids sg-0a8d78f4a99eeecfe \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
           --query 'Instances[0].InstanceId' \
