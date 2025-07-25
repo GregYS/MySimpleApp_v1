@@ -52,5 +52,5 @@ jobs:
 
     - name: Copy files to Windows instance via WinRM or RDP
       run: |
-        echo "Тут нужно WinRM / PsExec или использовать AWS SSM"
+        echo "ТуТ нужно WinRM / PsExec или использовать AWS SSM"
         # Пример: aws ssm send-command ...
