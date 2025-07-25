@@ -1,0 +1,56 @@
+# .github/workflows/deploy-to-ec2.yml
+
+name: Deploy to AWS EC2 Windows
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Launch EC2 Windows instance
+      id: ec2
+      run: |
+        INSTANCE_ID=$(aws ec2 run-instances \
+          --image-id ami-09331bd87b8261e7b \  # Windows AMI
+          --count 1 \
+          --instance-type t2.medium \
+          --key-name my-key \
+          --security-groups my-sg \
+          --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
+          --query 'Instances[0].InstanceId' \
+          --output text)
+        
+        echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+
+    - name: Wait for EC2 to be running
+      run: |
+        aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+
+    - name: Get public IP
+      id: get_ip
+      run: |
+        IP=$(aws ec2 describe-instances \
+          --instance-ids $INSTANCE_ID \
+          --query 'Reservations[0].Instances[0].PublicIpAddress' \
+          --output text)
+        echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
+
+    - name: Copy files to Windows instance via WinRM or RDP
+      run: |
+        echo "Тут нужно WinRM / PsExec или использовать AWS SSM"
+        # Пример: aws ssm send-command ...
