@@ -26,11 +26,11 @@ jobs:
       id: ec2
       run: |
         INSTANCE_ID=$(aws ec2 run-instances \
-          --image-id ami-09331bd87b8261e7b \  # Windows AMI
+          --image-id ami-09331bd87b8261e7b \
           --count 1 \
           --instance-type t2.medium \
           --key-name key-035ff5d7529cac43f \
-          --security-groups sg-0a8d78f4a99eeecfe \
+          --security-group-ids sg-0a8d78f4a99eeecfe \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
           --query 'Instances[0].InstanceId' \
           --output text)
