@@ -29,8 +29,8 @@ jobs:
           --image-id ami-09331bd87b8261e7b \  # Windows AMI
           --count 1 \
           --instance-type t2.medium \
-          --key-name my-key \
-          --security-groups my-sg \
+          --key-name key-035ff5d7529cac43f \
+          --security-groups sg-0a8d78f4a99eeecfe \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
           --query 'Instances[0].InstanceId' \
           --output text)
