@@ -1,6 +1,6 @@
 # .github/workflows/deploy-to-ec2.yml
 
-name: Deploy to AWS EC2 Windows
+name: Deploy to AWS EC2 Windows VM
 
 on:
   push:
