@@ -61,7 +61,21 @@ jobs:
         echo "S3_BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
 
     - name: Wait for SSM to be available
-      run: aws ssm wait instance-available --instance-ids $INSTANCE_ID
+      run: |
+        echo "⏳ Wait for the instance to register in SSM..."
+        for i in {1..30}; do
+          STATUS=$(aws ssm describe-instance-information \
+            --query "InstanceInformationList[?InstanceId=='$INSTANCE_ID'].PingStatus" \
+            --output text)
+
+          echo "SSM PingStatus: $STATUS"
+
+          if [ "$STATUS" = "Online" ]; then
+            echo "✅ Инстанс доступен через SSM."
+            break
+          fi
+          sleep 10
+        done
 
     - name: Copy and unzip files via SSM
       run: |
