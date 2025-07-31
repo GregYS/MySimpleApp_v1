@@ -1,15 +1,18 @@
-# .github/workflows/deploy-to-ec2.yml
-
-name: Deploy to AWS EC2 Windows VM
+name: Deploy to AWS EC2 Windows VM with SCP
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      EC2_REGION: us-east-1
+      EC2_AMI_ID: ami-0c9fb5d338f1eec43   # Windows Server 2025
+      EC2_INSTANCE_TYPE: t3.medium
+      EC2_KEY_NAME: my-key
+      EC2_SECURITY_GROUP_ID: sg-0a8d78f4a99eeecfe
 
     steps:
     - name: Checkout repository
@@ -20,28 +23,30 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: ${{ env.EC2_REGION }}
 
-    - name: Launch EC2 Windows instance
+    - name: Launch EC2 Windows instance with OpenSSH setup
       id: ec2
       run: |
+        USER_DATA=$(base64 -w0 .github/scripts/enable-ssh.ps1)
+
         INSTANCE_ID=$(aws ec2 run-instances \
-          --image-id ami-0c9fb5d338f1eec43 \
+          --image-id $EC2_AMI_ID \
           --count 1 \
-          --instance-type t3.medium \
-          --key-name my-key \
-          --security-group-ids sg-0a8d78f4a99eeecfe \
+          --instance-type $EC2_INSTANCE_TYPE \
+          --key-name $EC2_KEY_NAME \
+          --security-group-ids $EC2_SECURITY_GROUP_ID \
+          --user-data "$USER_DATA" \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
           --query 'Instances[0].InstanceId' \
           --output text)
-        
+
         echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
 
-    - name: Wait for EC2 to be running
-      run: |
-        aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+    - name: Wait for instance to be running
+      run: aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 
-    - name: Get public IP
+    - name: Get public IP address
       id: get_ip
       run: |
         IP=$(aws ec2 describe-instances \
@@ -50,31 +55,21 @@ jobs:
           --output text)
         echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
 
-    - name: Zip repository
-      run: zip -r project.zip . -x ".git/*"
-
-    - name: Upload ZIP to temporary S3 bucket
+    - name: Create ZIP of repository
       run: |
-        BUCKET_NAME=ci-temp-bucket-${{ github.run_id }}
-        aws s3 mb s3://$BUCKET_NAME || echo "Bucket exists"
-        aws s3 cp project.zip s3://$BUCKET_NAME/
-        echo "S3_BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+        zip -r project.zip . -x ".git/*"
+
+    - name: Write private key to file
+      run: |
+        echo "${{ secrets.WINDOWS_KEY_PEM }}" > key.pem
+        chmod 600 key.pem
 
     - name: Copy project files to EC2 via SCP
       run: |
-        echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
-        chmod 600 key.pem
         scp -o StrictHostKeyChecking=no -i key.pem project.zip Administrator@${{ env.EC2_PUBLIC_IP }}:/Users/Administrator/Documents/
 
     - name: Extract ZIP on EC2 (print instructions)
       run: |
-        echo "Готово!"
-        echo "Теперь ты можешь подключиться к EC2 по RDP: $EC2_PUBLIC_IP"
-        echo "И в PowerShell на EC2 выполнить:"
-        echo "Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\${GITHUB_REF_NAME}"
-
-    - name: Print access instructions
-      run: |
-        echo "✅ EC2 instance created: $INSTANCE_ID"
-        echo "🖥 IP: $EC2_PUBLIC_IP"
-        echo "📁 Files extracted to: C:\\Users\\Administrator\\Documents\\${{ env.BRANCH_NAME }}"
+        echo "✅ Теперь ты можешь зайти через RDP или SSH:"
+        echo "  IP: $EC2_PUBLIC_IP"
+        echo "  Распаковать: Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\"
