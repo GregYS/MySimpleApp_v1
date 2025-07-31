@@ -50,7 +50,33 @@ jobs:
           --output text)
         echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
 
-    - name: Copy files to Windows instance via WinRM or RDP
+    - name: Zip repository
+      run: zip -r project.zip . -x ".git/*"
+
+    - name: Upload ZIP to temporary S3 bucket
       run: |
-        echo "ТуТ нужно WinRM / PsExec или использовать AWS SSM"
-        # Пример: aws ssm send-command ...
+        BUCKET_NAME=ci-temp-bucket-${{ github.run_id }}
+        aws s3 mb s3://$BUCKET_NAME || echo "Bucket exists"
+        aws s3 cp project.zip s3://$BUCKET_NAME/
+        echo "S3_BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+
+    - name: Wait for SSM to be available
+      run: aws ssm wait instance-available --instance-ids $INSTANCE_ID
+
+    - name: Copy and unzip files via SSM
+      run: |
+        aws ssm send-command \
+          --instance-ids $INSTANCE_ID \
+          --document-name "AWS-RunPowerShellScript" \
+          --comment "Download and extract repo files" \
+          --parameters commands="\
+            aws s3 cp s3://${{ env.S3_BUCKET_NAME }}/project.zip C:\\Users\\Administrator\\Documents\\project.zip; \
+            Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\${{ env.BRANCH_NAME }}; \
+            Remove-Item C:\\Users\\Administrator\\Documents\\project.zip" \
+          --region ${{ env.AWS_REGION }}
+
+    - name: Print access instructions
+      run: |
+        echo "✅ EC2 instance created: $INSTANCE_ID"
+        echo "🖥 IP: $EC2_PUBLIC_IP"
+        echo "📁 Files extracted to: C:\\Users\\Administrator\\Documents\\${{ env.BRANCH_NAME }}"
