@@ -60,34 +60,18 @@ jobs:
         aws s3 cp project.zip s3://$BUCKET_NAME/
         echo "S3_BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
 
-    - name: Wait for SSM to be available
+    - name: Copy project files to EC2 via SCP
       run: |
-        echo "⏳ Wait for the instance to register in SSM..."
-        for i in {1..30}; do
-          STATUS=$(aws ssm describe-instance-information \
-            --query "InstanceInformationList[?InstanceId=='$INSTANCE_ID'].PingStatus" \
-            --output text)
+        echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+        chmod 600 key.pem
+        scp -o StrictHostKeyChecking=no -i key.pem project.zip Administrator@${{ env.EC2_PUBLIC_IP }}:/Users/Administrator/Documents/
 
-          echo "SSM PingStatus: $STATUS"
-
-          if [ "$STATUS" = "Online" ]; then
-            echo "✅ Инстанс доступен через SSM."
-            break
-          fi
-          sleep 10
-        done
-
-    - name: Copy and unzip files via SSM
+    - name: Extract ZIP on EC2 (print instructions)
       run: |
-        aws ssm send-command \
-          --instance-ids $INSTANCE_ID \
-          --document-name "AWS-RunPowerShellScript" \
-          --comment "Download and extract repo files" \
-          --parameters commands="\
-            aws s3 cp s3://${{ env.S3_BUCKET_NAME }}/project.zip C:\\Users\\Administrator\\Documents\\project.zip; \
-            Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\${{ env.BRANCH_NAME }}; \
-            Remove-Item C:\\Users\\Administrator\\Documents\\project.zip" \
-          --region ${{ env.AWS_REGION }}
+        echo "Готово!"
+        echo "Теперь ты можешь подключиться к EC2 по RDP: $EC2_PUBLIC_IP"
+        echo "И в PowerShell на EC2 выполнить:"
+        echo "Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\${GITHUB_REF_NAME}"
 
     - name: Print access instructions
       run: |
