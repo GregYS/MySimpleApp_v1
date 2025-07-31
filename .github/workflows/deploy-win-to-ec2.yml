@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EC2_REGION: us-east-1
-      EC2_AMI_ID: ami-0c9fb5d338f1eec43   # Windows Server 2025
+      EC2_AMI_ID: ami-0c9fb5d338f1eec43
       EC2_INSTANCE_TYPE: t3.medium
       EC2_KEY_NAME: my-key
       EC2_SECURITY_GROUP_ID: sg-0a8d78f4a99eeecfe
@@ -25,18 +25,21 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.EC2_REGION }}
 
-    - name: Launch EC2 Windows instance with OpenSSH setup
-      id: ec2
+    - name: Base64-encode PowerShell script
+      id: encode_script
       run: |
-        USER_DATA=$(base64 -w0 .github/scripts/enable-ssh.ps1)
+        base64 -w0 .github/scripts/enable-ssh.ps1 > script.b64
+        echo "ENCODED_USERDATA=$(cat script.b64)" >> $GITHUB_ENV
 
+    - name: Launch EC2 Windows instance with OpenSSH setup
+      run: |
         INSTANCE_ID=$(aws ec2 run-instances \
           --image-id $EC2_AMI_ID \
           --count 1 \
           --instance-type $EC2_INSTANCE_TYPE \
           --key-name $EC2_KEY_NAME \
           --security-group-ids $EC2_SECURITY_GROUP_ID \
-          --user-data "$USER_DATA" \
+          --user-data "$(cat script.b64)" \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=CI-Deploy}]' \
           --query 'Instances[0].InstanceId' \
           --output text)
@@ -47,7 +50,6 @@ jobs:
       run: aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 
     - name: Get public IP address
-      id: get_ip
       run: |
         IP=$(aws ec2 describe-instances \
           --instance-ids $INSTANCE_ID \
@@ -56,8 +58,7 @@ jobs:
         echo "EC2_PUBLIC_IP=$IP" >> $GITHUB_ENV
 
     - name: Create ZIP of repository
-      run: |
-        zip -r project.zip . -x ".git/*"
+      run: zip -r project.zip . -x ".git/*"
 
     - name: Write private key to file
       run: |
@@ -66,10 +67,15 @@ jobs:
 
     - name: Copy project files to EC2 via SCP
       run: |
-        scp -o StrictHostKeyChecking=no -i key.pem project.zip Administrator@${{ env.EC2_PUBLIC_IP }}:/Users/Administrator/Documents/
+        echo "Waiting for SSH port to become available..."
+        for i in {1..30}; do
+          nc -zv $EC2_PUBLIC_IP 22 && break || sleep 10
+        done
 
-    - name: Extract ZIP on EC2 (print instructions)
+        scp -o StrictHostKeyChecking=no -i key.pem project.zip Administrator@$EC2_PUBLIC_IP:/Users/Administrator/Documents/
+
+    - name: Print manual unzip command
       run: |
-        echo "✅ Теперь ты можешь зайти через RDP или SSH:"
-        echo "  IP: $EC2_PUBLIC_IP"
-        echo "  Распаковать: Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\"
+        echo "✅ Подключись по RDP или SSH к $EC2_PUBLIC_IP"
+        echo "📦 Распакуй архив:"
+        echo "    Expand-Archive -Path C:\\Users\\Administrator\\Documents\\project.zip -DestinationPath C:\\Users\\Administrator\\Documents\\"
