@@ -1,4 +1,4 @@
-name: Deploy to AWS EC2 Windows VM with SCP
+name: Deploy to AWS EC2 Windows VM with SCP.
 
 on:
   push:
