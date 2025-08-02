@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EC2_REGION: us-east-1
-      EC2_AMI_ID: ami-07bdd9b504f92991a
+      EC2_AMI_ID: ami-0455de3caedb4b2e0
       EC2_INSTANCE_TYPE: t3.medium
       EC2_KEY_NAME: my-key
       EC2_SECURITY_GROUP_ID: sg-0a8d78f4a99eeecfe
