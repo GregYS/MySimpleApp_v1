@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EC2_REGION: us-east-1
-      EC2_AMI_ID: ami-0455de3caedb4b2e0
+      EC2_AMI_ID: ami-09560e7e6dfa96999
       EC2_INSTANCE_TYPE: t3.medium
       EC2_KEY_NAME: my-key
       EC2_SECURITY_GROUP_ID: sg-0a8d78f4a99eeecfe
@@ -62,7 +62,7 @@ jobs:
 
     - name: Write private key to file
       run: |
-        echo "${{ secrets.WINDOWS_KEY_PEM }}" > key.pem
+        echo "${{ secrets.WINDOWS_KEY_PEM_EC2_AWS }}" > key.pem
         chmod 600 key.pem
 
     - name: Copy project files to EC2 via SCP
